@@ -63,13 +63,21 @@ module ActiveModel
         EOS_BELONGS_TO_WRITE
 
       end
-=begin
+
       def has_many(association, options={})
         options[:class_name] ||= association.to_s.classify
-#       options[:conditions]
-#       options[:order]
         options[:foreign_key] ||= self.name.underscore + "_id"
         options[:primary_key] ||= "id"
+        options[:limit] = nil unless options.has_key?(:limit)
+        options[:offset] ||= 0
+        options[:readonly] = false unless options.has_key?(:readonly)
+        options[:validate] = false unless options.has_key?(:validate)
+        options[:id] = false unless options.has_key?(:id)
+
+        # These are options that are available in ActiveRecord::Base but have not yet been determined if they fit in ActiveModel::Base or how they will be implemented.
+
+#       options[:conditions]
+#       options[:order]
 #       options[:dependent]
 #       options[:finder_sql]
 #       options[:counter_sql]
@@ -77,17 +85,13 @@ module ActiveModel
 #       options[:include]
 #       options[:group]
 #       options[:having]
-        options[:limit] = nil unless options.has_key?(:limit)
-        options[:offset] ||= 0
 #       options[:select]
 #       options[:as]
 #       options[:through]
 #       options[:source]
 #       options[:uniq]
-        options[:readonly] = false unless options.has_key?(:readonly)
-        options[:validate] = false unless options.has_key?(:validate)
 #       options[:inverse_of]
-        options[:id] = false unless options.has_key?(:id)
+
 
         attribute_name = association.to_s.singularize + "_ids"
 
@@ -121,7 +125,6 @@ module ActiveModel
 
 
       end
-=end
     end
     
   end
