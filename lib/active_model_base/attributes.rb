@@ -75,6 +75,7 @@ module ActiveModel
 
     module ClassMethods
 
+      # Finder aids allow for search parameters to be sent to find_all that will not necessarily appear as values in the returned results.
       mattr_accessor :finder_aids
       self.finder_aids = []
 

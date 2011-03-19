@@ -5,11 +5,12 @@ class FinderTest < ActiveModel::Base
   attribute :value, :type => :integer, :id => true
   attribute :name, :type => :string, :id => true
   attribute :description
+  attribute :helper, :type => :integer, :finder_aid => true
   
   Names=["apple", "bannana", "cantaloupe", "date", "x"]
   @@all = []
 
-  def self.all
+  def self.all(attributes_hash={})
     if @@all.empty?
       FinderTest::Names.size.times do |value|
         FinderTest::Names.each do |name|
@@ -17,7 +18,10 @@ class FinderTest < ActiveModel::Base
         end
       end
     end
-    @@all
+    # For test purposes we do something silly here.
+    helper_limit = (attributes_hash[:helper] || 0) - 1
+
+    @@all[0..helper_limit]
   end
 
 end
@@ -91,4 +95,8 @@ describe ActiveModel::Finders do
     FinderTest.find_all_by_name_and_description("bannana", "this is an even description").size.should equal((FinderTest::Names.size / 2.0).round)
   end
 
+  it "should find a subset if only using the finder aid" do
+    FinderTest.find_all_by_helper(7).size.should equal(7)
+  end
+  
 end
