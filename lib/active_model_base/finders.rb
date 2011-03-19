@@ -15,13 +15,8 @@ module ActiveModel
             finder_match.finder == :all ? [] : nil
           else
             attribute_hash = [finder_match.attribute_names, args[0..finder_match.attribute_names.size - 1]].transpose.inject(HashWithIndifferentAccess.new) { |hash, av|hash[av.first.to_sym] = av.last; hash }
-            case finder_match.finder
-            when :all
-              find_all attribute_hash
-            when :first
-              find_first attribute_hash
-            when :last
-              find_last attribute_hash
+            if [:all, :first, :last].include?(finder_match.finder)
+              find_matches attribute_hash, finder_match.finder
             else
               raise "Unknown finder #{finder_match.finder}"
             end
@@ -83,29 +78,6 @@ module ActiveModel
         ids.inject([]) { |x, id| x << all.find { |y| y.id == id }}
       end
 
-      def find_all(attribute_hash)
-        # Locate all attributes which are only aids to be passed as hints to the low level retrieve_all
-        finder_aids = model_attributes.select { |name, options| options[:finder_aid] }.keys.map(&:to_s)
-        # Identify all keys we will be comparing against
-        keys = attribute_hash.keys - finder_aids.map(&:to_s)
-        # Make the request to the low level retriever.
-        retrieve_all(attribute_hash, :all).select do |x|
-          keys.inject(true) do |rc, key|
-            # We need some duck typing here so the incomming key should probably be converted to the attribute type.
-#            rc && Array.wrap(attribute_hash[key]).include?(x.attributes[key])
-            rc && attribute_hash[key] == x.attributes[key]
-          end
-        end
-      end
-
-      def find_first(attribute_hash)
-        retrieve_all(attribute_hash, :first).find { |x| x.attributes(attribute_hash.keys) == attribute_hash }
-      end
-
-      def find_last(attribute_hash)
-        retrieve_all(attribute_hash, :last).reverse.find { |x| x.attributes(attribute_hash.keys) == attribute_hash }
-      end
-
       private
 
       # This method allows for you to accept the attributes hash in all to do some early optimization.
@@ -118,6 +90,41 @@ module ActiveModel
             all(attributes_hash)
           else
             all(attributes_hash, finder)
+        end
+      end
+
+      # Attempt to convert all of the values of a search hash to the types they should be for a the model
+      def duck_type_hash_values(hash)
+        hash.inject(HashWithIndifferentAccess.new) do |corrected_hash, hash_entry|
+          key = hash_entry.first
+          value = hash_entry.last
+          model_attribute = model_attributes[key.to_sym] || {}
+          value = ActiveModel::Attributes.convert_to(model_attribute[:type], value) unless value.nil? && model_attribute[:allow_nil]
+          corrected_hash[key] = value
+          corrected_hash
+        end
+      end
+
+      def find_matches(attribute_hash, finder)
+        # Convert values given to the types specified in the model
+        attribute_hash = duck_type_hash_values(attribute_hash)
+        # Locate all attributes which are only aids to be passed as hints to the low level retrieve_all
+        finder_aids = model_attributes.select { |name, options| options[:finder_aid] }.keys.map(&:to_s)
+        # Identify all keys we will be comparing against
+        keys = attribute_hash.keys - finder_aids.map(&:to_s)
+
+        # Make the request to the low level retriever.
+        all_values = retrieve_all(attribute_hash, finder)
+        # Reverse the values if we are looking for the last match
+        all_values.reverse! if finder == :last
+        # Identify the ruby search command we will use to dig through the values
+        search_command = (finder == :all) ? :select : :find
+
+        # Pull out the final value(s) matching our search
+        all_values.send(search_command) do |x|
+          keys.inject(true) do |rc, key|
+            rc && attribute_hash[key] == x.attributes[key]
+          end
         end
       end
 
