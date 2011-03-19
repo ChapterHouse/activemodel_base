@@ -9,6 +9,26 @@ module ActiveModel
       base.attribute :id
     end
 
+    # Convert a value to a specified type in a consistent manner. If type is given as nil, no conversion will be applied. If an unknown type is specified, the method to_#{type} will be called on value.
+    def self.convert_to(type, value)
+      case type
+      when :integer
+        value.to_i
+      when :float
+        value.to_f
+      when :string
+        value.to_s
+      when :date
+        value.respond_to?(:to_date) ? value.to_date : Date.parse(value.to_s)
+      when :datetime
+        value.respond_to?(:to_datetime) ? value.to_datetime : DateTime.parse(value.to_s)
+      when nil
+        value
+      else
+        value.send("to_#{type}".to_sym)
+      end
+    end
+
     include Comparable
 
     def initialize(new_attributes={})
@@ -43,21 +63,7 @@ module ActiveModel
     def save
       if valid?
         model_attributes.each do |name, options|
-          case options[:type]
-          when :integer
-            attributes[name] = attributes[name].to_i
-          when :float
-            attributes[name] = attributes[name].to_f
-          when :string
-            attributes[name] = attributes[name].to_s
-          when :date
-            attributes[name] = attributes[name].respond_to?(:to_date) ? attributes[name].to_date : Date.parse(attributes[name].to_s)
-          when :datetime
-            attributes[name] = attributes[name].respond_to?(:to_datetime) ? attributes[name].to_datetime : DateTime.parse(attributes[name].to_s)
-          when nil
-          else
-            attributes[name] = attributes[name].send("to_#{options[:type]}".to_sym)
-          end unless attributes[name].nil? && options[:allow_nil]
+          attributes[name] = ActiveModel::Attributes.convert_to(options[:type], attributes[name]) unless attributes[name].nil? && options[:allow_nil]
         end
         true
       else

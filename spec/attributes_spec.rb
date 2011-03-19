@@ -30,6 +30,36 @@ end
 
 describe ActiveModel::Attributes do
 
+  it "should convert a value to integer" do
+    ActiveModel::Attributes.convert_to(:integer, "1").should be_an_instance_of(Fixnum)
+  end
+
+  it "should convert a value to float" do
+    ActiveModel::Attributes.convert_to(:float, "1.0").should be_an_instance_of(Float)
+  end
+
+  it "should convert a value to string" do
+    ActiveModel::Attributes.convert_to(:string, 1).should be_an_instance_of(String)
+  end
+
+  it "should convert a value to date" do
+    ActiveModel::Attributes.convert_to(:date, Date.today.to_s).should be_an_instance_of(Date)
+  end
+
+  it "should convert a value to datetime" do
+    ActiveModel::Attributes.convert_to(:datetime, DateTime.now.to_s).should be_an_instance_of(DateTime)
+  end
+
+  it "should do no conversions on the value" do
+    value = {:a => 1, :b => 2, :c => 3}
+    ActiveModel::Attributes.convert_to(nil, value).should.equal?(value)
+  end
+
+  it "should convert a value to a custom type" do
+    value = CustomValueTester.new("test")
+    ActiveModel::Attributes.convert_to(:custom, value).should == value.to_custom
+  end
+
   it "should allow assignment during creation" do
     test = AttributeTest.new(:generic_value => "test")
     test.generic_value.should == "test"
