@@ -77,19 +77,23 @@ module ActiveModel
       private
 
       # Override this as needed to work with the basic find.
-      # id will always be an array. Always return an array.
+      # ids will always be an array. Always return an array.
       # The caller will deal with raising any "not found" errors as needed. nil values will automatically be removed.
       def find_ids(ids)
         ids.inject([]) { |x, id| x << all.find { |y| y.id == id }}
       end
 
-      # Override these last three as needed to work with the dynamic finder
       def find_all(attribute_hash)
-        keys = attribute_hash.keys
+        # Locate all attributes which are only aids to be passed as hints to the low level retrieve_all
+        finder_aids = model_attributes.select { |name, options| options[:finder_aid] }.keys.map(&:to_s)
+        # Identify all keys we will be comparing against
+        keys = attribute_hash.keys - finder_aids.map(&:to_s)
+        # Make the request to the low level retriever.
         retrieve_all(attribute_hash, :all).select do |x|
           keys.inject(true) do |rc, key|
-# We need some duck typing here so the incomming key should probably be converted to the attribute type.
-            rc && (finder_aids.include?(key.to_sym) || Array.wrap(attribute_hash[key]).include?(x.attributes[key]))
+            # We need some duck typing here so the incomming key should probably be converted to the attribute type.
+#            rc && Array.wrap(attribute_hash[key]).include?(x.attributes[key])
+            rc && attribute_hash[key] == x.attributes[key]
           end
         end
       end

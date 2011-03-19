@@ -75,10 +75,6 @@ module ActiveModel
 
     module ClassMethods
 
-      # Finder aids allow for search parameters to be sent to find_all that will not necessarily appear as values in the returned results.
-      mattr_accessor :finder_aids
-      self.finder_aids = []
-
       def attribute(*names)
         options = names.extract_options!
 
@@ -87,8 +83,6 @@ module ActiveModel
         options[:allow_nil] = true unless options.has_key?(:allow_nil)
 
         names.each do |attribute_name|
-
-          self.finder_aids << attribute_name if options[:finder_aid]
 
           def_command = "def #{attribute_name}"
           model_attributes_command = "self.model_attributes[:#{attribute_name}] = #{options.inspect}"
