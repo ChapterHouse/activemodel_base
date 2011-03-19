@@ -60,17 +60,6 @@ module ActiveModel
       attributes[key]
     end
 
-    def save
-      if valid?
-        model_attributes.each do |name, options|
-          attributes[name] = ActiveModel::Attributes.convert_to(options[:type], attributes[name]) unless attributes[name].nil? && options[:allow_nil]
-        end
-        true
-      else
-        false
-      end
-    end
-
     private
 
     def calculate_id(attr)
