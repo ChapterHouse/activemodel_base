@@ -1,0 +1,8 @@
+require 'active_support'
+require 'active_support/core_ext'
+require 'active_model'
+require 'active_model_base/dynamic_finder_match'
+require 'active_model_base/associations'
+require 'active_model_base/attributes'
+require 'active_model_base/finders'
+require 'active_model_base/base'
