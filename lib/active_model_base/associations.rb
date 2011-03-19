@@ -18,17 +18,25 @@ module ActiveModel
         options[:readonly] = false unless options.has_key?(:readonly)
         options[:id] = false unless options.has_key?(:id)
         options[:allow_nil] = true unless options.has_key?(:allow_nil)
-  #      options[:validate] = false unless options.has_key?(:validate)
-  #      options[:autosave] = false unless options.has_key?(:autosave)
-  #      options[:touch] = false unless options.has_key?(:touch)
-  #      options[:polymorphic] = false unless options.has_key?(:polymorphic)
+        # These are options that are available in ActiveRecord::Base but have not yet been determined if they fit in ActiveModel::Base or how they will be implemented.
+        # options[:validate] = false unless options.has_key?(:validate)
+        # options[:autosave] = false unless options.has_key?(:autosave)
+        # options[:touch] = false unless options.has_key?(:touch)
+        # options[:polymorphic] = false unless options.has_key?(:polymorphic)
 
+        # Here we make the magic methods that will allow the setting and reading of the associated model.
+        # For explanation, assume the model is a Post and will belong to an Author
 
+        # attribute :author_id, {:id => false, :allow_nil => true}
         attribute_command = "attribute :#{options[:foreign_key]}, {:id => #{options[:id].inspect}, :allow_nil => #{options[:allow_nil].inspect}}"
+        # def author
         def_command = "def #{association}"
+        # Author.find_by_id(author_id)
         finder_command = "#{options[:class_name]}.find_by_#{options[:primary_key]}(#{options[:foreign_key]})"
+        # public :author
         visibility_command = "public(:#{association})"
 
+        # Add the above commands to the class to make the blongs to reader association
         class_eval(<<-EOS_BELONGS_TO_READ, __FILE__, __LINE__ + 1)
           #{attribute_command}
           #{def_command}
@@ -37,12 +45,15 @@ module ActiveModel
           #{visibility_command}
         EOS_BELONGS_TO_READ
 
+        # def author=(new_author)
         def_command = "def #{association}=(new_value)"
+        # public :author=
         visibility = options[:readonly] ? 'private' : 'public'
         visibility_command = "#{visibility}(:#{association}=)"
+        # self.author_id = new_author.try(:id)
         setter_command = "self.#{options[:foreign_key]} = new_value.try(:#{options[:primary_key].to_sym})"
 
-        # We will always create the method so that it can be used internally if needed. We just make it private if it should act like it wasn't created.
+        # We will always create the writer method so that it can be used internally if needed. We just make it private if it should act like it wasn't created.
         class_eval(<<-EOS_BELONGS_TO_WRITE, __FILE__, __LINE__ + 1)
           #{def_command}
             #{setter_command}
