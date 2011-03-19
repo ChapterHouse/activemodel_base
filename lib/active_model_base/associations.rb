@@ -33,10 +33,13 @@ module ActiveModel
         def_command = "def #{association}"
         # Author.find_by_id(author_id)
         finder_command = "#{options[:class_name]}.find_by_#{options[:primary_key]}(#{options[:foreign_key]})"
+        # If the association is to be readonly then change the above to:
+        # record = Author.find_by_id(author_id); record.readonly!; record
+        finder_command = "record = #{finder_command}; record.readonly!; record" if options[:readonly]
         # public :author
         visibility_command = "public(:#{association})"
 
-        # Add the above commands to the class to make the blongs to reader association
+        # Add the above commands to the class to make the belongs to reader association
         class_eval(<<-EOS_BELONGS_TO_READ, __FILE__, __LINE__ + 1)
           #{attribute_command}
           #{def_command}
@@ -48,12 +51,11 @@ module ActiveModel
         # def author=(new_author)
         def_command = "def #{association}=(new_value)"
         # public :author=
-        visibility = options[:readonly] ? 'private' : 'public'
-        visibility_command = "#{visibility}(:#{association}=)"
+        visibility_command = "public(:#{association}=)"
         # self.author_id = new_author.try(:id)
         setter_command = "self.#{options[:foreign_key]} = new_value.try(:#{options[:primary_key].to_sym})"
 
-        # We will always create the writer method so that it can be used internally if needed. We just make it private if it should act like it wasn't created.
+        # Add the above commands to the class to make the belongs to writer association
         class_eval(<<-EOS_BELONGS_TO_WRITE, __FILE__, __LINE__ + 1)
           #{def_command}
             #{setter_command}
@@ -92,14 +94,21 @@ module ActiveModel
 #       options[:uniq]
 #       options[:inverse_of]
 
+        # Here we make the magic methods that will allow the setting and reading of the associated models.
+        # For explanation, assume the model is an Author and will belong to a Post
 
+        
         attribute_name = association.to_s.singularize + "_ids"
-
+        # attribute :post_ids, {:id => false, :allow_nil => true}
         attribute_command = "attribute :#{attribute_name}}, {:id => #{options[:id].inspect}, :read_only => #{options[:readonly].inspect}}"
-        def_command = "def #{association}(force_reload='not_implemented')"
-        finder_command = "#{options[:class_name]}.find_by_#{options[:foreign_key]}(#{options[:primary_key]})"
+        # def posts(force_reload=false)
+        def_command = "def #{association}(force_reload=false)"
+        # Post.find_all_by_author_id(id)
+        finder_command = "#{options[:class_name]}.find_all_by_#{options[:foreign_key]}(#{options[:primary_key]})"
+        # public :posts
         visibility_command = "public(:#{association})"
 
+        # Add the above commands to the class to make the has many reader association
         class_eval(<<-EOS_HAS_MANY_READ, __FILE__, __LINE__ + 1)
           #{attribute_command}
           #{def_command}
@@ -108,11 +117,18 @@ module ActiveModel
           #{visibility_command}
         EOS_HAS_MANY_READ
 
+        # This is the collection<<(object, ...) method
         method_name = "#{association}<<"
+        # def posts<<(*objects)
         def_command = "def #{method_name}(*objects)"
+
+        # TODO: This needs to modify the Post objects to set the association.
+        # objects.each { |x| self.posts << x if x.is_a?(Post) }
         append_command = "objects.each { |x| self.#{attribute_name} << x if x.is_a?(#{options[:class_name]}) }"
+        # public :posts<<
         visibility_command = "#{visibility}(:#{method_name})"
 
+        # Add the above commands to the class to make the has many append method
         class_eval(<<-EOS_HAS_MANY_APPEND, __FILE__, __LINE__ + 1)
           #{def_command}
             #{append_command}
