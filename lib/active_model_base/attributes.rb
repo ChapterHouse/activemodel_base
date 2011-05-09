@@ -9,23 +9,30 @@ module ActiveModel
       base.attribute :id
     end
 
-    # Convert a value to a specified type in a consistent manner. If type is given as nil, no conversion will be applied. If an unknown type is specified, the method to_#{type} will be called on value.
+    # Convert a value to a specified type in a consistent manner.
+    # If type is given as nil, no conversion will be applied.
+    # If an unknown type is specified, the method to_#{type} will be called on value.
+    # If an error is raised during conversion, nil will be returned.
     def self.convert_to(type, value)
-      case type
-      when :integer
-        value.to_i
-      when :float
-        value.to_f
-      when :string
-        value.to_s
-      when :date
-        value.respond_to?(:to_date) ? value.to_date : Date.parse(value.to_s)
-      when :datetime
-        value.respond_to?(:to_datetime) ? value.to_datetime : DateTime.parse(value.to_s)
-      when nil
-        value
-      else
-        value.send("to_#{type}".to_sym)
+      begin
+        case type
+        when :integer
+          value.to_i
+        when :float
+          value.to_f
+        when :string
+          value.to_s
+        when :date
+          value.respond_to?(:to_date) ? value.to_date : Date.parse(value.to_s)
+        when :datetime
+          value.respond_to?(:to_datetime) ? value.to_datetime : DateTime.parse(value.to_s)
+        when nil
+          value
+        else
+          value.send("to_#{type}".to_sym)
+        end
+      rescue
+        nil
       end
     end
 
@@ -56,11 +63,21 @@ module ActiveModel
       false
     end
 
+    def read_attribute(key)
+      attributes[key.to_sym]
+    end
+
     def read_attribute_for_validation(key)
       attributes[key]
     end
 
     private
+
+    def write_attribute(key, value)
+      key = key.to_sym
+      type = (self.model_attributes[key] || {})[:type]
+      attributes[key] = ActiveModel::Attributes.convert_to(type, value)
+    end
 
     def calculate_id(attr)
       id_related_attributes = model_attributes.select { |key, value| value[:id] }.map(&:first)
@@ -81,7 +98,7 @@ module ActiveModel
 
           def_command = "def #{attribute_name}"
           model_attributes_command = "self.model_attributes[:#{attribute_name}] = #{options.inspect}"
-          reader_command = "attributes[:#{attribute_name}]"
+          reader_command = "read_attribute(:#{attribute_name})"
           visibility_command = "public(:#{attribute_name})"
 
           class_eval(<<-EOS_ATTRIBUTE_READ, __FILE__, __LINE__ + 1)
@@ -94,7 +111,7 @@ module ActiveModel
 
           # We will always create the method so that it can be used internally if needed. It will just been hidden from the public if it should appear non existent.
           def_command = "def #{attribute_name}=(new_value)"
-          writer_command = "attributes[:#{attribute_name}] = new_value"
+          writer_command = "write_attribute(:#{attribute_name}, new_value)"
           update_id_command = options[:id] ? "attributes[:id] = calculate_id(:#{attribute_name}); new_value" : ''
           visibility = options[:readonly] ? 'private' : 'public'
           visibility_command = "#{visibility}(:#{attribute_name}=)"

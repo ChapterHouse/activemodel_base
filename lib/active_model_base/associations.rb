@@ -77,6 +77,7 @@ module ActiveModel
         options[:id] = false unless options.has_key?(:id)
 
         # These are options that are available in ActiveRecord::Base but have not yet been determined if they fit in ActiveModel::Base or how they will be implemented.
+        # Feel free to specify them if you wish. They will just be ignored, but there is no error thrown.
 
 #       options[:conditions]
 #       options[:order]

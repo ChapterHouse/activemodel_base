@@ -84,6 +84,10 @@ class Post < ActiveModel::Base
     @@all = []
   end
 
+  def blah
+    read_attribute(:title)
+  end
+
 end
 
 
@@ -187,14 +191,22 @@ describe ActiveModel::Associations do
       it "has a normal association write accessor" do
         Post.first.should respond_to(:rating=)
       end
-
     end
 
     context "with the readonly option" do
+      it "marks the association as read only when set to true" do
+        expect{ Post.first.generic_record.save }.to raise_error(ActiveModel::ReadOnlyRecord)
+      end
+    end
+
+    context "with the allow_nil option" do
       it "marks the association as read only" do
         expect{ Post.first.generic_record.save }.to raise_error(ActiveModel::ReadOnlyRecord)
       end
+    end
 
+    it "explodes" do
+      Post.first.blah
     end
 
   end

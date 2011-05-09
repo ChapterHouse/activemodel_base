@@ -24,8 +24,12 @@ class AttributeTest < ActiveModel::Base
   attribute :generic_value
   attribute :custom_value, :type => :custom
   attribute :read_only_value, :readonly => true
-  attribute :nonnil_attribute, :type => :integer, :allow_nil => false
   
+end
+
+class AttributeAllowNilTest < ActiveModel::Base
+  attribute :nonnillable, :allow_nil => false
+  attribute :nillable
 end
 
 describe ActiveModel::Attributes do
@@ -156,16 +160,12 @@ describe ActiveModel::Attributes do
     test.id.should == "2_be"
   end
 
-  it "should convert from nil" do
-    test = AttributeTest.new
-    test.save
-    test.nonnil_attribute.should == 0
+  it "should not allow nil" do
+    pending "determine where to test this"
   end
 
-  it "should not convert from nil" do
-    test = AttributeTest.new
-    test.save
-    test.integer_value.should == nil
+  it "should allow nil" do
+    pending "determine where to test this"
   end
 
 end

@@ -38,9 +38,6 @@ module ActiveModel
     def save
       raise ReadOnlyRecord if readonly?
       if valid?
-        model_attributes.each do |name, options|
-          attributes[name] = ActiveModel::Attributes.convert_to(options[:type], attributes[name]) unless attributes[name].nil? && options[:allow_nil]
-        end
         true
       else
         false
