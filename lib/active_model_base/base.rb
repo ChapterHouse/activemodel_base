@@ -2,10 +2,14 @@ module ActiveModel
 
   if const_defined?("ActiveRecord")
     ActiveModelError = ActiveRecord::StandardError
+    AssociationTypeMismatch = ActiveRecord::AssociationTypeMismatch
     RecordNotFound = ActiveRecord::RecordNotFound
     ReadOnlyRecord = ActiveRecord::ReadOnlyRecord
   else
     class ActiveModelError < StandardError
+    end
+
+    class AssociationTypeMismatch < StandardError
     end
 
     class RecordNotFound < ActiveModelError
@@ -38,6 +42,7 @@ module ActiveModel
     def save
       raise ReadOnlyRecord if readonly?
       if valid?
+        write_attribute(:id, calculated_id)
         true
       else
         false

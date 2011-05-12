@@ -1,3 +1,5 @@
+require 'uuid'
+
 module ActiveModel
 
   module Attributes
@@ -40,7 +42,6 @@ module ActiveModel
 
     def initialize(new_attributes={})
       new_attributes.each { |name, value| send("#{name}=",value) }
-#      self.id = calculated_id unless attributes.has_key?(:id) || !respond_to?(:calculated_id)
     end
 
     # If you need to compare against something more than just the attributes then override this.
@@ -79,10 +80,26 @@ module ActiveModel
       attributes[key] = ActiveModel::Attributes.convert_to(type, value)
     end
 
-    def calculate_id(attr)
-      id_related_attributes = model_attributes.select { |key, value| value[:id] }.map(&:first)
-      values = id_related_attributes.blank? ? attributes(model_attributes.keys - [:id]) : attributes(id_related_attributes)
-      values.to_a.map { |x| x.map(&:to_s) }.sort { |a, b| a.first <=> b.first }.map(&:last).join("_")
+    def calculated_id
+      id_related_attributes = id_attributes
+      unless id_related_attributes.blank?
+        attributes(id_related_attributes).to_a.map { |x| x.map(&:to_s) }.sort { |a, b| a.first <=> b.first }.map(&:last).join("_")
+      else
+        read_attribute(:id) || UUID.new.generate.gsub("-","").to_i(16)
+      end
+    end
+
+    def id_attributes
+      model_attributes.keys.select { |attribute_name| id_attribute?(attribute_name) }
+    end
+
+    def id_attribute?(attr)
+      attr = attr.to_sym
+      has_attribute?(attr) && model_attributes[attr][:id]
+    end
+
+    def has_attribute?(attr)
+      model_attributes.has_key?(attr)
     end
 
     module ClassMethods
@@ -112,13 +129,11 @@ module ActiveModel
           # We will always create the method so that it can be used internally if needed. It will just been hidden from the public if it should appear non existent.
           def_command = "def #{attribute_name}=(new_value)"
           writer_command = "write_attribute(:#{attribute_name}, new_value)"
-          update_id_command = options[:id] ? "attributes[:id] = calculate_id(:#{attribute_name}); new_value" : ''
           visibility = options[:readonly] ? 'private' : 'public'
           visibility_command = "#{visibility}(:#{attribute_name}=)"
           class_eval(<<-EOS_ATTRIBUTE_WRITE, __FILE__, __LINE__ + 1)
             #{def_command}
               #{writer_command}
-              #{update_id_command}
             end
             #{visibility_command}
           EOS_ATTRIBUTE_WRITE

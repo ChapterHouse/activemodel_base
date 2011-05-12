@@ -84,10 +84,6 @@ class Post < ActiveModel::Base
     @@all = []
   end
 
-  def blah
-    read_attribute(:title)
-  end
-
 end
 
 
@@ -159,6 +155,10 @@ describe ActiveModel::Associations do
         post.author_id.should be_nil
       end
 
+      it "provides type saftey" do
+        pending "test with AssociationTypeMismatch"
+      end
+
     end
 
     context "with the class_name option" do
@@ -203,10 +203,6 @@ describe ActiveModel::Associations do
       it "marks the association as read only" do
         expect{ Post.first.generic_record.save }.to raise_error(ActiveModel::ReadOnlyRecord)
       end
-    end
-
-    it "explodes" do
-      Post.first.blah
     end
 
   end

@@ -101,13 +101,19 @@ module ActiveModel
         
         attribute_name = association.to_s.singularize + "_ids"
         # attribute :post_ids, {:id => false, :allow_nil => true}
-        attribute_command = "attribute :#{attribute_name}}, {:id => #{options[:id].inspect}, :read_only => #{options[:readonly].inspect}}"
+        attribute_command = "attribute :#{attribute_name}, {:id => #{options[:id].inspect}, :read_only => #{options[:readonly].inspect}}"
         # def posts(force_reload=false)
         def_command = "def #{association}(force_reload=false)"
         # Post.find_all_by_author_id(id)
         finder_command = "#{options[:class_name]}.find_all_by_#{options[:foreign_key]}(#{options[:primary_key]})"
         # public :posts
         visibility_command = "public(:#{association})"
+
+puts attribute_command
+puts def_command
+puts "  " + finder_command
+puts "end"
+puts visibility_command
 
         # Add the above commands to the class to make the has many reader association
         class_eval(<<-EOS_HAS_MANY_READ, __FILE__, __LINE__ + 1)
@@ -118,6 +124,7 @@ module ActiveModel
           #{visibility_command}
         EOS_HAS_MANY_READ
 
+=begin
         # This is the collection<<(object, ...) method
         method_name = "#{association}<<"
         # def posts<<(*objects)
@@ -127,7 +134,15 @@ module ActiveModel
         # objects.each { |x| self.posts << x if x.is_a?(Post) }
         append_command = "objects.each { |x| self.#{attribute_name} << x if x.is_a?(#{options[:class_name]}) }"
         # public :posts<<
-        visibility_command = "#{visibility}(:#{method_name})"
+        visibility_command = "public(:#{method_name})"
+
+puts def_command
+puts "  " + append_command
+puts "  " + association.to_s
+puts "end"
+puts visibility_command
+puts "alias :concat #{append_command}"
+
 
         # Add the above commands to the class to make the has many append method
         class_eval(<<-EOS_HAS_MANY_APPEND, __FILE__, __LINE__ + 1)
@@ -136,9 +151,9 @@ module ActiveModel
             #{association}
           end
           #{visibility_command}
-          alias :concat
+          alias :concat #{append_command}
         EOS_HAS_MANY_APPEND
-
+=end
 
 
       end
