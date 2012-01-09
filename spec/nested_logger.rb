@@ -286,7 +286,8 @@ class Object
   end
 
   def nestedLoggerCleanStack(stack=nil)
-    (stack || caller).delete_if { |line| line.include?("NestedLogger")}
+#    (stack || caller).delete_if { |line| line.include?("NestedLogger")}
+    (stack || caller).delete_if { |line| line.include?("nested_logger")}
   end
 
   def removeNestedLoggerFromBacktrace(exception)
