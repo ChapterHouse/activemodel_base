@@ -149,14 +149,15 @@ describe ActiveModel::Attributes do
   end
 
   it "should autocalculate the id" do
-    test = AttributeTest.new(:integer_value => 1, :string_value => "test")
+    test = AttributeTest.create(:integer_value => 1, :string_value => "test")
     test.id.should == "1_test"
   end
 
   it "should recalculate the id" do
-    test = AttributeTest.new(:integer_value => 1, :string_value => "test")
+    test = AttributeTest.create(:integer_value => 1, :string_value => "test")
     test.integer_value = 2
     test.string_value = "be"
+    test.save
     test.id.should == "2_be"
   end
 

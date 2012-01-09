@@ -17,6 +17,7 @@ class FinderTest < ActiveModel::Base
           @@all << new(:value => value, :name => name, :description => value.even? ? "this is an even description" : "this is an odd description")
         end
       end
+      @@all.each(&:save)
     end
     # For test purposes we do something silly here.
     helper_limit = (attributes_hash[:helper] || 0) - 1

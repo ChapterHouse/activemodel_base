@@ -8,7 +8,10 @@ class Author < ActiveModel::Base
   @@all = []
   
   def self.all
-    Names.each { |name| @@all << new(:name => name) } if @@all.empty?
+    if @@all.empty?
+      Names.each { |name| @@all << new(:name => name) }
+      @@all.each(&:save)
+    end
     @@all
   end 
 
@@ -34,7 +37,10 @@ class Rating < ActiveModel::Base
 
   @@all = []
   def self.all
-    Descriptions.each { |description| @@all << new(:description => description) } if @@all.empty?
+    if @@all.empty?
+      Descriptions.each { |description| @@all << new(:description => description) }
+      @@all.each(&:save)
+    end
     @@all
   end
 
@@ -51,7 +57,10 @@ class GenericRecord < ActiveModel::Base
   
   @@all = []
   def self.all
-    5.times { |x| @@all << new(:id => x, :value => x*x) } if @@all.empty?
+    if @@all.empty?
+      5.times { |x| @@all << new(:id => x, :value => x*x) }
+      @@all.each(&:save)
+    end
     @@all
   end
 
@@ -76,6 +85,7 @@ class Post < ActiveModel::Base
       3.times do |x|
         @@all << new(:title => "#{author.name}'s post number #{x}", :author_id => author.id, :writer_id => author.id, :generic_record_id => x)
       end
+      @@all.each(&:save)
     end if @@all.empty?
     @@all
   end 
