@@ -3,6 +3,7 @@ require 'spec_helper'
 class Author < ActiveModel::Base
 
   attribute :name, :type => :string, :id => true
+  has_many :posts
 
   Names = ["Adam", "Bob", "Charlie", "Diane"]
   @@all = []
@@ -166,7 +167,7 @@ describe ActiveModel::Associations do
       end
 
       it "provides type saftey" do
-        pending "test with AssociationTypeMismatch"
+#        pending "test with AssociationTypeMismatch"
       end
 
     end
@@ -213,6 +214,77 @@ describe ActiveModel::Associations do
       it "marks the association as read only" do
         expect{ Post.first.generic_record.save }.to raise_error(ActiveModel::ReadOnlyRecord)
       end
+    end
+
+  end
+
+  describe "#has_many" do
+
+    context "with no options" do
+  
+      it "has a read association_ids accessor" do
+        Author.first.should respond_to(:post_ids)
+      end
+
+      it "has a write association_ids accessor" do
+        Author.first.should respond_to(:post_ids=)
+      end
+
+      it "has a read association accessor" do
+        Author.first.should respond_to(:posts)
+      end
+
+      it "has a write association accessor" do
+        Author.first.should respond_to(:posts=)
+      end
+
+      it "has a array of association_ids that matches the array of ids of the retrieved associations" do
+        author = Author.first
+        author.post_ids.should == Post.find_all_by_author_id(author.id).map(&:id)
+      end
+# 
+      # it "changes the association if the association_id changes" do
+        # post = Post.first
+        # next_author = Author.next_author(post.author)
+        # post.author_id = next_author.id
+        # post.author.should equal(next_author)
+      # end
+# 
+      # it "changes the association_id if the association changes" do
+        # post = Post.first
+        # next_author = Author.next_author(post.author)
+        # post.author = next_author
+        # post.author_id.should equal(next_author.id)
+      # end
+# 
+      # it "allows nil to be set for the association_id" do
+        # post = Post.first
+        # post.author_id = nil
+        # post.should be_valid
+      # end
+# 
+      # it "allows nil to be set for the association" do
+        # post = Post.first
+        # post.author = nil
+        # post.should be_valid
+      # end
+# 
+      # it "changes the association to nil if the association_id changes to nil" do
+        # post = Post.first
+        # post.author_id = nil
+        # post.author.should be_nil
+      # end
+# 
+      # it "changes the association_id to nil if the association changes to nil" do
+        # post = Post.first
+        # post.author = nil
+        # post.author_id.should be_nil
+      # end
+# 
+      # it "provides type saftey" do
+        # pending "test with AssociationTypeMismatch"
+      # end
+
     end
 
   end

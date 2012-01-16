@@ -90,6 +90,10 @@ class Object
     text.to_s.split("\n").each { |line| self.loggerMethod.call((logIndent * (logDepth >= 0 ? logDepth : 0)) + line) } if loggingOn?
   end
       
+  def self.log_spacer
+    self.loggerMethod.call((logIndent * (logDepth >= 0 ? logDepth : 0))) if loggingOn?
+  end
+
   def self.log(text)
     writelog text
     if block_given? then
@@ -129,6 +133,7 @@ class Object
   end
  
   def self.log_method(*args)
+log_spacer
     options = args.last.is_a?(Hash) && !args.last.empty? ? args.pop : {}
     text = currentMethodForNestedLogging + 
            "(" +
@@ -136,7 +141,9 @@ class Object
            options.sort { |a, b| a.to_s <=> b.to_s }.map { |a, b| "#{a} = " + b.inspect }
            ).join(", ") +
            ")"
-    block_given? ? self.log(text) { yield } : self.log(text)
+rc =     block_given? ? self.log(text) { yield } : self.log(text)
+log_spacer
+rc
   end
 
   def self.log_xml(xml, name=nil)

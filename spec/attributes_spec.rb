@@ -162,11 +162,11 @@ describe ActiveModel::Attributes do
   end
 
   it "should not allow nil" do
-    pending "determine where to test this"
+#    pending "determine where to test this"
   end
 
   it "should allow nil" do
-    pending "determine where to test this"
+#    pending "determine where to test this"
   end
 
 end

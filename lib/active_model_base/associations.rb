@@ -3,12 +3,74 @@ module ActiveModel
   # The real trick to the associations will be getting them to work seamlessly with ActiveRecord::Base subclasses
   module Associations
 
+    # This is the class to handle the array of children from an association. We have to add the methods that ActiveRecord
+    # adds to the array to allow things like concat, empty?, size, find, etc.
+    # TODO: Add delayed retrieval.
+    class AssociationProxy < ActiveSupport::BasicObject
+    
+      # The options are the exact same that were used to establish the association. 
+      # Sending the hash in eases the amount of information needed to be passed.
+      def initialize(parent, association_options, children)
+        @parent = parent
+        @options = association_options
+        @children = ::Array.wrap(children)
+        @child_klass = association_options[:class_name].constantize
+        @parent_key = association_options[:primary_key]
+        @child_key = association_options[:foreign_key]
+        @set_foreign_key = "#{@child_key}="
+      end
+    
+      def method_missing(method, *args, &block)
+::Object.logDepth += 1
+rc = ::Object.log_method(method, args, block) {
+         @children.send(method, *args, &block)
+}
+::Object.logDepth -= 2
+rc
+      end
+      
+      def concat(*objects)
+        parent_id = parent.send(@parent_key)
+    
+        objects.flatten.each do |new_child|
+          if new_child.is_a?(@child_klass)
+            new_child.send(@set_foreign_key, parent_id)
+            @children.concat new_child
+            new_child.save unless child.new_record?
+          end
+        end
+
+        self
+      end
+     
+      alias :<< :concat 
+      
+      # TODO: Update to handle :dependant => :destroy and :dependant => :delete_all
+      def clear
+::Object.log_method {
+::Object.log_variable :children => @children
+        @children.each do |child|
+          child.send(@set_foreign_key, nil)
+          @children.save
+        end
+        @children.clear
+        self
+}        
+      end
+
+    end
+
+
     def self.included(base)
       base.send(:include, ActiveModel::Finders)
       base.extend ClassMethods
     end
 
     module ClassMethods
+
+def print_commands(*commands)
+  commands.each { |x| puts x }
+end
 
       # Does not yet address build_association or create_association
       def belongs_to(association, options={})
@@ -98,63 +160,112 @@ module ActiveModel
         # Here we make the magic methods that will allow the setting and reading of the associated models.
         # For explanation, assume the model is an Author and will belong to a Post
 
-        
-        attribute_name = association.to_s.singularize + "_ids"
+        # Define the attribute needed to hold the ids
+#        attribute_name = association.to_s.singularize + "_ids"
         # attribute :post_ids, {:id => false, :allow_nil => true}
-        attribute_command = "attribute :#{attribute_name}, {:id => #{options[:id].inspect}, :read_only => #{options[:readonly].inspect}}"
+#        attribute_command = "attribute :#{attribute_name}, {:id => #{options[:id].inspect}, :read_only => #{options[:readonly].inspect}}"
+
+
+        # Create the associations reader command
+
         # def posts(force_reload=false)
         def_command = "def #{association}(force_reload=false)"
-        # Post.find_all_by_author_id(id)
-        finder_command = "#{options[:class_name]}.find_all_by_#{options[:foreign_key]}(#{options[:primary_key]})"
+
+        #   if force_reload || @proxy.nil? then
+        if_load_needed = "if force_reload || @proxy.nil? then"
+        #     children = Post.find_all_by_author_id(id)        
+        finder_command = "children = #{options[:class_name]}.find_all_by_#{options[:foreign_key]}(#{options[:primary_key]})"
+        #     @proxy = AssociationProxy.new(Post, {:options => 'From Above'}, children)
+        proxy_command = "@proxy = AssociationProxy.new(self, #{options}, children)"
+        #   end
+        #   @proxy
+        results = "@proxy"
+        # end
         # public :posts
         visibility_command = "public(:#{association})"
 
-puts attribute_command
-puts def_command
-puts "  " + finder_command
-puts "end"
-puts visibility_command
+#print_commands def_command, "  " + if_load_needed, "    " + finder_command, "    " + proxy_command, "  end", "end", visibility_command
 
         # Add the above commands to the class to make the has many reader association
         class_eval(<<-EOS_HAS_MANY_READ, __FILE__, __LINE__ + 1)
-          #{attribute_command}
           #{def_command}
-            #{finder_command}
+log_method {
+            #{if_load_needed}
+              #{finder_command}
+              #{proxy_command}
+            end
+            @proxy
+}
           end
           #{visibility_command}
         EOS_HAS_MANY_READ
 
-=begin
-        # This is the collection<<(object, ...) method
-        method_name = "#{association}<<"
-        # def posts<<(*objects)
-        def_command = "def #{method_name}(*objects)"
 
-        # TODO: This needs to modify the Post objects to set the association.
-        # objects.each { |x| self.posts << x if x.is_a?(Post) }
-        append_command = "objects.each { |x| self.#{attribute_name} << x if x.is_a?(#{options[:class_name]}) }"
-        # public :posts<<
-        visibility_command = "public(:#{method_name})"
+        # Create the association_ids reader command
 
-puts def_command
-puts "  " + append_command
-puts "  " + association.to_s
-puts "end"
-puts visibility_command
-puts "alias :concat #{append_command}"
+        command_name = association.to_s.singularize + "_ids"
 
+        # def post_ids(force_reload=false)
+        def_command = "def #{command_name}(force_reload=false)"
+        #   posts(force_reload).map(&:id)
+        map_command = "#{association}(force_reload).map(&:id)"
+        # end
+        # public :post_ids
+        visibility_command = "public(:#{command_name})"
 
-        # Add the above commands to the class to make the has many append method
-        class_eval(<<-EOS_HAS_MANY_APPEND, __FILE__, __LINE__ + 1)
+#print_commands def_command, "  " + map_command, "end", visibility_command
+
+        # Add the above commands to the class to make the has many reader association
+        class_eval(<<-EOS_HAS_MANY_READ_IDS, __FILE__, __LINE__ + 1)
           #{def_command}
-            #{append_command}
-            #{association}
+log_method {
+            #{map_command}
+}
           end
           #{visibility_command}
-          alias :concat #{append_command}
-        EOS_HAS_MANY_APPEND
-=end
+        EOS_HAS_MANY_READ_IDS
 
+        # Create the writer command
+
+        # def posts=(array)
+        #   posts.clear        
+        #   public :posts
+        # end
+        # public(:posts=)
+
+        class_eval(<<-EOS_HAS_MANY_WRITE, __FILE__, __LINE__ + 1)
+          def #{association}=(array)
+log_method {
+            #{association}.clear
+            #{association} << array
+}
+          end
+          public(:#{association}=)
+        EOS_HAS_MANY_WRITE
+
+
+
+        # Create the writer command
+
+        # def post_ids=(array)
+        #   posts.clear        
+        #   public :posts
+        # end
+        # public(:post_ids=)
+
+        command_name = association.to_s.singularize + "_ids"
+
+
+        # TODO: Determine what Active Record returns on this. The ids or the records?
+        class_eval(<<-EOS_HAS_MANY_WRITE_IDS, __FILE__, __LINE__ + 1)
+          def #{command_name}=(array_of_ids)
+log_method {
+            #{association} = "#{options[:class_name]}.find#(array_of_ids)"
+            #{command_name}_ids
+}
+          end
+          public(:#{command_name}=)
+        EOS_HAS_MANY_WRITE_IDS
 
       end
     end
