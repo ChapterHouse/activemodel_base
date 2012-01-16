@@ -238,9 +238,37 @@ describe ActiveModel::Associations do
         Author.first.should respond_to(:posts=)
       end
 
+      it "returns an array of associations that matches what can be found manually" do
+        author = Author.first
+        author.posts.should == Post.find_all_by_author_id(author.id)
+      end
+
       it "has a array of association_ids that matches the array of ids of the retrieved associations" do
         author = Author.first
         author.post_ids.should == Post.find_all_by_author_id(author.id).map(&:id)
+      end
+
+      it "should reassign associations by array assignment" do
+        author = Author.first
+        second_author = Author.last
+        author.posts.should_not be_empty
+        second_author.posts.should_not be_empty
+
+        assigned_posts = second_author.posts
+        author.posts = assigned_posts
+
+        second_author.posts(true).should be_empty
+        Post.find_by_author_id(second_author.id).should be_nil
+        author.posts.should == assigned_posts
+        Post.find_all_by_author_id(author.id).should == assigned_posts
+      end
+
+      it "should clear the associations" do
+        author = Author.first
+        author.posts.should_not be_empty
+        author.posts.clear
+        author.posts.should be_empty
+        Post.find_by_author_id(author.id).should be_nil
       end
 # 
       # it "changes the association if the association_id changes" do

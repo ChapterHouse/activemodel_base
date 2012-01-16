@@ -21,24 +21,26 @@ module ActiveModel
       end
     
       def method_missing(method, *args, &block)
-::Object.logDepth += 1
-rc = ::Object.log_method(method, args, block) {
+# ::Object.logDepth += 1
+# rc = ::Object.log_method(method, args, block) {
          @children.send(method, *args, &block)
-}
-::Object.logDepth -= 2
-rc
+# }
+# ::Object.logDepth -= 2
+# rc
       end
       
       def concat(*objects)
-        parent_id = parent.send(@parent_key)
+        parent_id = @parent.send(@parent_key)
     
-        objects.flatten.each do |new_child|
-          if new_child.is_a?(@child_klass)
-            new_child.send(@set_foreign_key, parent_id)
-            @children.concat new_child
-            new_child.save unless child.new_record?
-          end
-        end
+        # Pull out the objects of the right class
+        new_children = objects.flatten.find_all { |x| x.is_a?(@child_klass) }
+        # Since we have no transaction support, this gets fun.
+        # Set the keys all at once.
+        new_children.each { |x| x.send(@set_foreign_key, parent_id) }
+        # Append the new children to the existing array
+        @children += new_children
+        # Save everything as close to all at once as possible. If anything goes wrong we have a local copy of what should be at least.
+        new_children.each { |x| x.save }#unless x.new_record? }
 
         self
       end
@@ -47,15 +49,17 @@ rc
       
       # TODO: Update to handle :dependant => :destroy and :dependant => :delete_all
       def clear
-::Object.log_method {
-::Object.log_variable :children => @children
+# 
+# ::Object.log_method {
+#::Object.log_variable :children => @children.size
+
         @children.each do |child|
           child.send(@set_foreign_key, nil)
-          @children.save
+          child.save
         end
-        @children.clear
+        @children = []
         self
-}        
+#}        
       end
 
     end
@@ -189,13 +193,11 @@ end
         # Add the above commands to the class to make the has many reader association
         class_eval(<<-EOS_HAS_MANY_READ, __FILE__, __LINE__ + 1)
           #{def_command}
-log_method {
             #{if_load_needed}
               #{finder_command}
               #{proxy_command}
             end
             @proxy
-}
           end
           #{visibility_command}
         EOS_HAS_MANY_READ
@@ -218,9 +220,7 @@ log_method {
         # Add the above commands to the class to make the has many reader association
         class_eval(<<-EOS_HAS_MANY_READ_IDS, __FILE__, __LINE__ + 1)
           #{def_command}
-log_method {
             #{map_command}
-}
           end
           #{visibility_command}
         EOS_HAS_MANY_READ_IDS
@@ -229,16 +229,14 @@ log_method {
 
         # def posts=(array)
         #   posts.clear        
-        #   public :posts
+        #   posts << array
         # end
         # public(:posts=)
 
         class_eval(<<-EOS_HAS_MANY_WRITE, __FILE__, __LINE__ + 1)
           def #{association}=(array)
-log_method {
             #{association}.clear
             #{association} << array
-}
           end
           public(:#{association}=)
         EOS_HAS_MANY_WRITE
@@ -259,13 +257,12 @@ log_method {
         # TODO: Determine what Active Record returns on this. The ids or the records?
         class_eval(<<-EOS_HAS_MANY_WRITE_IDS, __FILE__, __LINE__ + 1)
           def #{command_name}=(array_of_ids)
-log_method {
             #{association} = "#{options[:class_name]}.find#(array_of_ids)"
             #{command_name}_ids
-}
           end
           public(:#{command_name}=)
         EOS_HAS_MANY_WRITE_IDS
+
 
       end
     end
