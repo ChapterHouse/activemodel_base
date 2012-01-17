@@ -106,7 +106,6 @@ describe ActiveModel::Associations do
     Rating.reset_all
     GenericRecord.reset_all
   end
-
   describe "#belongs_to" do
  
     context "with no options" do
@@ -221,7 +220,7 @@ describe ActiveModel::Associations do
   describe "#has_many" do
 
     context "with no options" do
-  
+
       it "has a read association_ids accessor" do
         Author.first.should respond_to(:post_ids)
       end
@@ -300,6 +299,13 @@ describe ActiveModel::Associations do
         Post.find_all_by_author_id(author.id).should == remaining_posts
         Post.find(posts_to_remove.map(&:id)).map(&:author_id).compact.should be_empty
       end
+
+      it "supports find by attributes" do
+        Author.first.posts.find_by_generic_record_id(1).should == Post.find_by_generic_record_id(1)
+      end
+
+      # Dont forget count and size
+
 
 # 
       # it "changes the association if the association_id changes" do

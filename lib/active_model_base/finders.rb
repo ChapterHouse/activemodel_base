@@ -65,6 +65,7 @@ module ActiveModel
       end
 
       # Override this only if this isn't efficient
+      # Hrm, has this been removed or was I just hallucinating to start with?
       def random
         all[rand(count)]
       end

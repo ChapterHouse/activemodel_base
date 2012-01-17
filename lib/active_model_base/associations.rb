@@ -7,7 +7,13 @@ module ActiveModel
     # adds to the array to allow things like concat, empty?, size, find, etc.
     # TODO: Add delayed retrieval.
     class AssociationProxy < ActiveSupport::BasicObject
-    
+
+require "active_model_base/finders"
+#      include ::ActiveModel::Finders    
+#      require "./finders"
+      include ::ActiveModel::Finders::ClassMethods
+
+
       # The options are the exact same that were used to establish the association. 
       # Sending the hash in eases the amount of information needed to be passed.
       def initialize(parent, association_options, children)
@@ -20,13 +26,15 @@ module ActiveModel
         @set_foreign_key = "#{@child_key}="
       end
     
+
+
+
       def method_missing(method, *args, &block)
-# ::Object.logDepth += 1
-# rc = ::Object.log_method(method, args, block) {
-         @children.send(method, *args, &block)
-# }
-# ::Object.logDepth -= 2
-# rc
+        begin
+          super
+        rescue ::NameError => e
+          @children.send(method, *args, &block)
+        end
       end
       
 def puts(*args)
@@ -73,6 +81,19 @@ end
         objects.each(&:save)
         self
       end
+
+private
+
+      # These two are to support the finders on the proxy
+
+      def model_attributes
+        @child_klass.model_attributes
+      end
+
+      def retrieve_all(attributes_hash, finder)
+        @children
+      end
+
 
     end
 
