@@ -263,6 +263,23 @@ describe ActiveModel::Associations do
         Post.find_all_by_author_id(author.id).should == assigned_posts
       end
 
+      it "should reassign associations by array id assignment" do
+        author = Author.first
+        second_author = Author.last
+        author.posts.should_not be_empty
+        second_author.posts.should_not be_empty
+        
+        assigned_posts = second_author.posts
+        assigned_post_ids = second_author.post_ids
+        author.post_ids = assigned_post_ids
+
+        second_author.posts(true).should be_empty
+        Post.find_by_author_id(second_author.id).should be_nil
+        author.posts.should == assigned_posts
+        Post.find_all_by_author_id(author.id).should == assigned_posts
+      end
+
+
       it "should clear the associations" do
         author = Author.first
         author.posts.should_not be_empty

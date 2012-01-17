@@ -225,7 +225,7 @@ end
           #{visibility_command}
         EOS_HAS_MANY_READ_IDS
 
-        # Create the writer command
+        # Create the associations writer command
 
         # def posts=(array)
         #   posts.clear        
@@ -243,7 +243,7 @@ end
 
 
 
-        # Create the writer command
+        # Create the association_ids writer command
 
         # def post_ids=(array)
         #   posts.clear        
@@ -257,8 +257,8 @@ end
         # TODO: Determine what Active Record returns on this. The ids or the records?
         class_eval(<<-EOS_HAS_MANY_WRITE_IDS, __FILE__, __LINE__ + 1)
           def #{command_name}=(array_of_ids)
-            #{association} = "#{options[:class_name]}.find#(array_of_ids)"
-            #{command_name}_ids
+            self.#{association} = #{options[:class_name]}.find(array_of_ids)
+            #{command_name}
           end
           public(:#{command_name}=)
         EOS_HAS_MANY_WRITE_IDS
