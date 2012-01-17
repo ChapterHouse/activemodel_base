@@ -247,38 +247,6 @@ describe ActiveModel::Associations do
         author.post_ids.should == Post.find_all_by_author_id(author.id).map(&:id)
       end
 
-      it "should reassign associations by array assignment" do
-        author = Author.first
-        second_author = Author.last
-        author.posts.should_not be_empty
-        second_author.posts.should_not be_empty
-
-        assigned_posts = second_author.posts
-        author.posts = assigned_posts
-
-        second_author.posts(true).should be_empty
-        Post.find_by_author_id(second_author.id).should be_nil
-        author.posts.should == assigned_posts
-        Post.find_all_by_author_id(author.id).should == assigned_posts
-      end
-
-      it "should reassign associations by array id assignment" do
-        author = Author.first
-        second_author = Author.last
-        author.posts.should_not be_empty
-        second_author.posts.should_not be_empty
-        
-        assigned_posts = second_author.posts
-        assigned_post_ids = second_author.post_ids
-        author.post_ids = assigned_post_ids
-
-        second_author.posts(true).should be_empty
-        Post.find_by_author_id(second_author.id).should be_nil
-        author.posts.should == assigned_posts
-        Post.find_all_by_author_id(author.id).should == assigned_posts
-      end
-
-
       it "should clear the associations" do
         author = Author.first
         author.posts.should_not be_empty
@@ -286,6 +254,116 @@ describe ActiveModel::Associations do
         author.posts.should be_empty
         Post.find_by_author_id(author.id).should be_nil
       end
+
+      context "during array assignment" do
+
+        it "should set the destination's new associations to be only the source's old assocations" do
+          destination_author = Author.first
+          source_author = Author.last
+          destination_author.posts.should_not be_empty
+          source_author.posts.should_not be_empty
+  
+          assigned_posts = source_author.posts
+          destination_author.posts = assigned_posts
+  
+          destination_author.posts.should == assigned_posts
+        end
+  
+        it "should save the destination's new associations to be only the source's old assocations" do
+          destination_author = Author.first
+          source_author = Author.last
+          destination_author.posts.should_not be_empty
+          source_author.posts.should_not be_empty
+  
+          assigned_posts = source_author.posts
+          destination_author.posts = assigned_posts
+  
+          Post.find_all_by_author_id(destination_author.id).should == assigned_posts
+        end
+  
+        it "should set the sources's associations to be empty" do
+          destination_author = Author.first
+          source_author = Author.last
+          destination_author.posts.should_not be_empty
+          source_author.posts.should_not be_empty
+  
+          assigned_posts = source_author.posts
+          destination_author.posts = assigned_posts
+  
+          source_author.posts(true).should be_empty
+        end
+  
+        it "should save the sources's associations as empty" do
+          destination_author = Author.first
+          source_author = Author.last
+          destination_author.posts.should_not be_empty
+          source_author.posts.should_not be_empty
+  
+          assigned_posts = source_author.posts
+          destination_author.posts = assigned_posts
+  
+          Post.find_by_author_id(source_author.id).should be_nil
+        end
+
+      end
+
+      context "during array id assignment" do
+  
+        it "should set the destination's new associations to be only the source's old assocations" do
+          destination_author = Author.first
+          source_author = Author.last
+          destination_author.posts.should_not be_empty
+          source_author.posts.should_not be_empty
+          
+          assigned_posts = source_author.posts
+          assigned_post_ids = source_author.post_ids
+          destination_author.post_ids = assigned_post_ids
+  
+          destination_author.posts.should == assigned_posts
+        end
+  
+        it "should save the destination's new associations to be only the source's old assocations" do
+          destination_author = Author.first
+          source_author = Author.last
+          destination_author.posts.should_not be_empty
+          source_author.posts.should_not be_empty
+          
+          assigned_posts = source_author.posts
+          assigned_post_ids = source_author.post_ids
+          destination_author.post_ids = assigned_post_ids
+  
+          Post.find_all_by_author_id(destination_author.id).should == assigned_posts
+        end
+  
+        it "should set the sources's associations to be empty" do
+          destination_author = Author.first
+          source_author = Author.last
+          destination_author.posts.should_not be_empty
+          source_author.posts.should_not be_empty
+          
+          assigned_posts = source_author.posts
+          assigned_post_ids = source_author.post_ids
+          destination_author.post_ids = assigned_post_ids
+  
+          source_author.posts(true).should be_empty
+        end
+  
+        it "should save the sources's associations as empty" do
+          destination_author = Author.first
+          source_author = Author.last
+          destination_author.posts.should_not be_empty
+          source_author.posts.should_not be_empty
+          
+          assigned_posts = source_author.posts
+          assigned_post_ids = source_author.post_ids
+          destination_author.post_ids = assigned_post_ids
+  
+          Post.find_by_author_id(source_author.id).should be_nil
+        end
+
+      end
+
+
 
       it "should delete selected associationss" do
         author = Author.first
