@@ -29,6 +29,10 @@ module ActiveModel
 # rc
       end
       
+def puts(*args)
+  ::Object.send(:puts, *args)
+end
+
       def concat(*objects)
         parent_id = @parent.send(@parent_key)
     
@@ -49,21 +53,28 @@ module ActiveModel
       
       # TODO: Update to handle :dependant => :destroy and :dependant => :delete_all
       def clear
-# 
-# ::Object.log_method {
-#::Object.log_variable :children => @children.size
-
         @children.each do |child|
           child.send(@set_foreign_key, nil)
           child.save
         end
         @children = []
         self
-#}        
+      end
+
+      # TODO: Determine what AR does when it cannot find the item to delete.
+      def delete(*objects)
+        objects.flatten!
+        # Oh how much we appreciate transactions.
+        # You know, I wonder if something could be hand rolled to handle instances like this
+        # or if we could somehow tap into the AR transactions outside of AR to reset the objects.
+        # TODO: Check into handr olled or AR transactions.
+        @children.delete_if { |child| objects.include?(child) }
+        objects.each { |child| child.send(@set_foreign_key, nil) }
+        objects.each(&:save)
+        self
       end
 
     end
-
 
     def self.included(base)
       base.send(:include, ActiveModel::Finders)

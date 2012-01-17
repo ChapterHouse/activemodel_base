@@ -287,6 +287,20 @@ describe ActiveModel::Associations do
         author.posts.should be_empty
         Post.find_by_author_id(author.id).should be_nil
       end
+
+      it "should delete selected associationss" do
+        author = Author.first
+        remaining_posts = author.posts
+        posts_to_remove = []
+        posts_to_remove << remaining_posts.pop
+        posts_to_remove << remaining_posts.shift
+        
+        author.posts.delete(posts_to_remove)
+        author.posts.should == remaining_posts
+        Post.find_all_by_author_id(author.id).should == remaining_posts
+        Post.find(posts_to_remove.map(&:id)).map(&:author_id).compact.should be_empty
+      end
+
 # 
       # it "changes the association if the association_id changes" do
         # post = Post.first
