@@ -217,6 +217,8 @@ describe ActiveModel::Associations do
 
   end
 
+
+
   describe "#has_many" do
 
     context "with no options" do
@@ -381,6 +383,53 @@ describe ActiveModel::Associations do
       it "supports find by attributes" do
         Author.first.posts.find_by_generic_record_id(1).should == Post.find_by_generic_record_id(1)
       end
+
+      it "allows building a new asoociation from the array" do
+        author = Author.first
+        title = "Build test"
+        writer = Author.last
+        rating = Rating.first
+        generic_record = GenericRecord.last
+        
+        post_count = author.posts.size
+
+        post = author.posts.build(:title => title, :writer => writer, :rating => rating, :generic_record => generic_record)
+
+        post.should equal(author.posts.last)
+        post.author.should equal(author)
+        post.title.should equal(title)
+        post.writer.should equal(writer)
+        post.rating.should equal(rating)
+        post.generic_record.should equal(generic_record)
+        author.posts.size.should equal(post_count + 1)
+
+        # post.new_record?.should be_true
+        Post.find_by_id(post.id).should be_nil
+      end
+
+      it "allows creating a new asoociation from the array" do
+        author = Author.first
+        title = "Build test"
+        writer = Author.last
+        rating = Rating.first
+        generic_record = GenericRecord.last
+        
+        post_count = author.posts.size
+
+        post = author.posts.create(:title => title, :writer => writer, :rating => rating, :generic_record => generic_record)
+        
+        post.should equal(author.posts.last)
+        post.author.should equal(author)
+        post.title.should equal(title)
+        post.writer.should equal(writer)
+        post.rating.should equal(rating)
+        post.generic_record.should equal(generic_record)
+        author.posts.size.should equal(post_count + 1)
+
+        # post.new_record?.should be_false
+        Post.find_by_id(post.id).should == post
+      end
+
 
       # Dont forget count and size
 

@@ -8,11 +8,8 @@ module ActiveModel
     # TODO: Add delayed retrieval.
     class AssociationProxy < ActiveSupport::BasicObject
 
-require "active_model_base/finders"
-#      include ::ActiveModel::Finders    
-#      require "./finders"
+      require "active_model_base/finders"
       include ::ActiveModel::Finders::ClassMethods
-
 
       # The options are the exact same that were used to establish the association. 
       # Sending the hash in eases the amount of information needed to be passed.
@@ -26,20 +23,39 @@ require "active_model_base/finders"
         @set_foreign_key = "#{@child_key}="
       end
     
-
-
-
       def method_missing(method, *args, &block)
+#log("method_missing(#{method.inspect}, #{args.inspect}, #{block.inspect})") {
         begin
           super
-        rescue ::NameError => e
+        rescue ::NameError, ::NoMethodError => e
           @children.send(method, *args, &block)
         end
+#}
       end
       
 def puts(*args)
   ::Object.send(:puts, *args)
 end
+
+def log(*args, &block)
+  ::Object.log(*args, &block)
+end
+
+      def build(*args)
+        child = @child_klass.new(*args)
+        concat child
+        child
+      end
+
+      # TODO: Update to handle :dependant => :destroy and :dependant => :delete_all
+      def clear
+        @children.each do |child|
+          child.send(@set_foreign_key, nil)
+          child.save
+        end
+        @children = []
+        self
+      end
 
       def concat(*objects)
         parent_id = @parent.send(@parent_key)
@@ -59,15 +75,12 @@ end
      
       alias :<< :concat 
       
-      # TODO: Update to handle :dependant => :destroy and :dependant => :delete_all
-      def clear
-        @children.each do |child|
-          child.send(@set_foreign_key, nil)
-          child.save
-        end
-        @children = []
-        self
+      def create(*args)
+        child = @child_klass.create(*args)
+        concat child
+        child
       end
+
 
       # TODO: Determine what AR does when it cannot find the item to delete.
       def delete(*objects)
@@ -84,16 +97,19 @@ end
 
 private
 
-      # These two are to support the finders on the proxy
+      # These three are to support the finders on the proxy
 
       def model_attributes
         @child_klass.model_attributes
       end
 
       def retrieve_all(attributes_hash, finder)
-        @children
+        self
       end
 
+      def all
+        @children
+      end
 
     end
 
