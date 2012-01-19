@@ -68,7 +68,7 @@ end
         # Append the new children to the existing array
         @children += new_children
         # Save everything as close to all at once as possible. If anything goes wrong we have a local copy of what should be at least.
-        new_children.each { |x| x.save }#unless x.new_record? }
+        new_children.each { |x| x.save unless x.new_record? }
 
         self
       end

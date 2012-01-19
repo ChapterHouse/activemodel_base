@@ -8,24 +8,34 @@ class Author < ActiveModel::Base
   Names = ["Adam", "Bob", "Charlie", "Diane"]
   @@all = []
   
-  def self.all
-    if @@all.empty?
-      Names.each { |name| @@all << new(:name => name) }
-      @@all.each(&:save)
+  class << self
+
+    def all
+      populate_store if @@all.empty?
+      @@all
+    end 
+
+    def next_author(author)
+      find(Names[Names.index(author.id) + 1])
     end
-    @@all
-  end 
+  
+    def reset_all
+      @@all = []
+    end
+
+    def save(record)
+      @@all << record if record.new_record?
+      true
+    end
+  
+    def populate_store
+      Names.each { |name| create(:name => name) }
+    end
+
+  end
 
   def to_s
     "#{id} [\n" + model_attributes.keys.map { |x| "  #{x} => #{self.send(x).inspect}" }.join("\n") + "\n]"
-  end
-
-  def self.next_author(author)
-    find(Names[Names.index(author.id) + 1])
-  end
-
-  def self.reset_all
-    @@all = []
   end
 
 end
@@ -37,16 +47,31 @@ class Rating < ActiveModel::Base
   Descriptions = ["Excellant", "Great", "Good", "Bad", "BurnIt"]
 
   @@all = []
-  def self.all
-    if @@all.empty?
-      Descriptions.each { |description| @@all << new(:description => description) }
-      @@all.each(&:save)
+
+  class << self
+
+    def all
+      populate_store if @@all.empty?
+      @@all
+    end 
+
+    def reset_all
+      @@all = []
     end
-    @@all
+
+    def save(record)
+      @@all << record if record.new_record?
+      true
+    end
+  
+    def populate_store
+      Descriptions.each { |description| create(:description => description) }
+    end
+
   end
 
-  def self.reset_all
-    @@all = []
+  def to_s
+    "#{id} [\n" + model_attributes.keys.map { |x| "  #{x} => #{self.send(x).inspect}" }.join("\n") + "\n]"
   end
 
 end
@@ -57,16 +82,31 @@ class GenericRecord < ActiveModel::Base
   attribute :id, :type => :integer
   
   @@all = []
-  def self.all
-    if @@all.empty?
-      5.times { |x| @@all << new(:id => x, :value => x*x) }
-      @@all.each(&:save)
+
+  class << self
+
+    def all
+      populate_store if @@all.empty?
+      @@all
+    end 
+
+    def reset_all
+      @@all = []
     end
-    @@all
+
+    def save(record)
+      @@all << record if record.new_record?
+      true
+    end
+  
+    def populate_store
+      5.times { |x| create(:id => x, :value => x*x) }
+    end
+
   end
 
-  def self.reset_all
-    @@all = []
+  def to_s
+    "#{id} [\n" + model_attributes.keys.map { |x| "  #{x} => #{self.send(x).inspect}" }.join("\n") + "\n]"
   end
 
 end
@@ -81,19 +121,36 @@ class Post < ActiveModel::Base
 
   @@all = []
 
-  def self.all
-    Author.all.each do |author|
-      3.times do |x|
-        @@all << new(:title => "#{author.name}'s post number #{x}", :author_id => author.id, :writer_id => author.id, :generic_record_id => x)
-      end
-      @@all.each(&:save)
-    end if @@all.empty?
-    @@all
-  end 
+  class << self
 
-  def self.reset_all
-    @@all = []
+    def all
+      populate_store if @@all.empty?
+      @@all
+    end 
+
+    def reset_all
+      @@all = []
+    end
+
+    def save(record)
+      @@all << record if record.new_record?
+      true
+    end
+  
+    def populate_store
+      Author.all.each do |author|
+        3.times do |x|
+          create(:title => "#{author.name}'s post number #{x}", :author_id => author.id, :writer_id => author.id, :generic_record_id => x)
+        end
+      end
+    end
+
   end
+
+  def to_s
+    "#{id} [\n" + model_attributes.keys.map { |x| "  #{x} => #{self.send(x).inspect}" }.join("\n") + "\n]"
+  end
+
 
 end
 

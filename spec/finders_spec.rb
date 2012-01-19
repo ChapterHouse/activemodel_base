@@ -10,19 +10,30 @@ class FinderTest < ActiveModel::Base
   Names=["apple", "bannana", "cantaloupe", "date", "x"]
   @@all = []
 
-  def self.all(attributes_hash={})
-    if @@all.empty?
+  class << self
+
+    def all(attributes_hash={})
+      populate_store if @@all.empty?
+  
+      # For test purposes we do something silly here.
+      helper_limit = (attributes_hash[:helper] || 0) - 1
+  
+      @@all[0..helper_limit]
+    end
+  
+    def save(record)
+      @@all << record if record.new_record?
+      true
+    end
+  
+    def populate_store
       FinderTest::Names.size.times do |value|
         FinderTest::Names.each do |name|
-          @@all << new(:value => value, :name => name, :description => value.even? ? "this is an even description" : "this is an odd description")
+          create(:value => value, :name => name, :description => value.even? ? "this is an even description" : "this is an odd description")
         end
       end
-      @@all.each(&:save)
     end
-    # For test purposes we do something silly here.
-    helper_limit = (attributes_hash[:helper] || 0) - 1
 
-    @@all[0..helper_limit]
   end
 
   def to_s

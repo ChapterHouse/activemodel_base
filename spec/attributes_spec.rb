@@ -12,6 +12,10 @@ class CustomValueTester
     {value => value}
   end
   
+  def self.save(record)
+    true
+  end
+
 end
 
 class AttributeTest < ActiveModel::Base
@@ -25,11 +29,21 @@ class AttributeTest < ActiveModel::Base
   attribute :custom_value, :type => :custom
   attribute :read_only_value, :readonly => true
   
+  def self.save(record)
+    true
+  end
+
+
 end
 
 class AttributeAllowNilTest < ActiveModel::Base
   attribute :nonnillable, :allow_nil => false
   attribute :nillable
+
+  def self.save(record)
+    true
+  end
+
 end
 
 describe ActiveModel::Attributes do

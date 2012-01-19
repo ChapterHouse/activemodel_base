@@ -79,7 +79,7 @@ module ActiveModel
     # The save is moved to the class level so that the new_record marker to be set after the class defined store handling.
     # The store handling can return false or raise an exception to signify that the record was not stored.
     def self.save(record)
-      false
+      raise "#{self} has not implemented a save at the class level!"
     end
 
   end
