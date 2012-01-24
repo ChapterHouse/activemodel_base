@@ -124,7 +124,7 @@ def print_commands(*commands)
   commands.each { |x| puts x }
 end
 
-      # Does not yet address build_association or create_association
+      # Does not yet address build_association or create_association. (Soon though. has_any now has them. Just have to finish the tests for has_many.)
       def belongs_to(association, options={})
         options[:class_name] ||= association.to_s.classify
         options[:foreign_key] ||= association.to_s + "_id"
