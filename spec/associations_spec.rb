@@ -4,6 +4,8 @@ class Author < ActiveModel::Base
 
   attribute :name, :type => :string, :id => true
   has_many :posts
+  has_many :documents, :class_name => "Post", :foreign_key => :writer_id
+
 
   Names = ["Adam", "Bob", "Charlie", "Diane"]
   @@all = []
@@ -138,9 +140,11 @@ class Post < ActiveModel::Base
     end
   
     def populate_store
+      writers = Author.all.reverse
       Author.all.each do |author|
+        writer = writers.shift
         3.times do |x|
-          create(:title => "#{author.name}'s post number #{x}", :author_id => author.id, :writer_id => author.id, :generic_record_id => x)
+          create(:title => "#{author.name}'s post number #{x}", :author_id => author.id, :writer_id => writer.id, :generic_record_id => x)
         end
       end
     end
@@ -154,8 +158,8 @@ class Post < ActiveModel::Base
 
 end
 
-
 describe ActiveModel::Associations do
+
 
   after(:each) do
     Author.reset_all
@@ -304,6 +308,18 @@ describe ActiveModel::Associations do
       it "has a array of association_ids that matches the array of ids of the retrieved associations" do
         author = Author.first
         author.post_ids.should == Post.find_all_by_author_id(author.id).map(&:id)
+      end
+
+      it "should maintain its own proxy instance variable" do
+        author = Author.first
+        # Check values first and also cause the proxies to be loaded.
+        author.posts.should_not equal(author.documents)
+        # Now make sure the internal instance variables holding the proxies exist and are not referencing the same proxy.
+        author.instance_variables.include?(:@posts_proxy).should be_true
+        author.instance_variables.include?(:@documents_proxy).should be_true
+        author.instance_variable_get(:@posts_proxy).should_not equal(author.instance_variable_get(:@documents_proxy))
+        # In the above data, the arrays should be different too. (Yes, I had a situation where the above passed yet there was still a bug :)
+        author.posts.should_not == author.documents
       end
 
       it "should clear the associations" do
@@ -460,7 +476,7 @@ describe ActiveModel::Associations do
         post.generic_record.should equal(generic_record)
         author.posts.size.should equal(post_count + 1)
 
-        # post.new_record?.should be_true
+        post.new_record?.should be_true
         Post.find_by_id(post.id).should be_nil
       end
 
@@ -483,59 +499,51 @@ describe ActiveModel::Associations do
         post.generic_record.should equal(generic_record)
         author.posts.size.should equal(post_count + 1)
 
-        # post.new_record?.should be_false
+        post.new_record?.should be_false
         Post.find_by_id(post.id).should == post
       end
 
+    end
 
-      # Dont forget count and size
+    context "with the class_name option" do
+      it "has a normal read association_ids accessor" do
+        Author.first.should respond_to(:document_ids)
+      end
 
+      it "has a normal write association_ids accessor" do
+        Author.first.should respond_to(:documents=)
+      end
 
-# 
-      # it "changes the association if the association_id changes" do
-        # post = Post.first
-        # next_author = Author.next_author(post.author)
-        # post.author_id = next_author.id
-        # post.author.should equal(next_author)
-      # end
-# 
-      # it "changes the association_id if the association changes" do
-        # post = Post.first
-        # next_author = Author.next_author(post.author)
-        # post.author = next_author
-        # post.author_id.should equal(next_author.id)
-      # end
-# 
-      # it "allows nil to be set for the association_id" do
-        # post = Post.first
-        # post.author_id = nil
-        # post.should be_valid
-      # end
-# 
-      # it "allows nil to be set for the association" do
-        # post = Post.first
-        # post.author = nil
-        # post.should be_valid
-      # end
-# 
-      # it "changes the association to nil if the association_id changes to nil" do
-        # post = Post.first
-        # post.author_id = nil
-        # post.author.should be_nil
-      # end
-# 
-      # it "changes the association_id to nil if the association changes to nil" do
-        # post = Post.first
-        # post.author = nil
-        # post.author_id.should be_nil
-      # end
-# 
-      # it "provides type saftey" do
-        # pending "test with AssociationTypeMismatch"
-      # end
+      it "has a normal read associations accessor" do
+        Author.first.should respond_to(:documents)
+      end
 
+      it "has a normal write associations accessor" do
+        Author.first.should respond_to(:documents=)
+      end
+
+      it "retrieves the requested class" do
+        Author.first.documents.first.should be_an_instance_of(Post)
+      end
+    end
+
+    context "with the foreign_key option" do
+      it "should track back to the writer through the foreign key" do
+        writer = Author.first
+        writers = writer.documents.map(&:writer).uniq
+        writers.size.should == 1
+        writers.first.should equal(writer)
+      end
+
+      it "should not track back to the writer through the default key" do
+        writer = Author.first
+        authors = writer.documents.map(&:author).uniq
+        authors.size.should == 1
+        authors.first.should_not equal(writer)
+      end
     end
 
   end
+
 
 end

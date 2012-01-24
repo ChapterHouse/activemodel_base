@@ -212,26 +212,22 @@ end
         # Here we make the magic methods that will allow the setting and reading of the associated models.
         # For explanation, assume the model is an Author and will belong to a Post
 
-        # Define the attribute needed to hold the ids
-#        attribute_name = association.to_s.singularize + "_ids"
-        # attribute :post_ids, {:id => false, :allow_nil => true}
-#        attribute_command = "attribute :#{attribute_name}, {:id => #{options[:id].inspect}, :read_only => #{options[:readonly].inspect}}"
-
+        # The name of the instance variable holding the association proxy. In the example it would be: @posts_proxy
+        proxy = "@#{association}_proxy"
 
         # Create the associations reader command
 
         # def posts(force_reload=false)
         def_command = "def #{association}(force_reload=false)"
 
-        #   if force_reload || @proxy.nil? then
-        if_load_needed = "if force_reload || @proxy.nil? then"
+        #   if force_reload || @posts_proxy.nil? then
+        if_load_needed = "if force_reload || #{proxy}.nil? then"
         #     children = Post.find_all_by_author_id(id)        
         finder_command = "children = #{options[:class_name]}.find_all_by_#{options[:foreign_key]}(#{options[:primary_key]})"
-        #     @proxy = AssociationProxy.new(Post, {:options => 'From Above'}, children)
-        proxy_command = "@proxy = AssociationProxy.new(self, #{options}, children)"
+        #     @posts_proxy = AssociationProxy.new(Post, {:options => 'From Above'}, children)
+        proxy_command = "#{proxy} = AssociationProxy.new(self, #{options}, children)"
         #   end
-        #   @proxy
-        results = "@proxy"
+        #   @posts_proxy
         # end
         # public :posts
         visibility_command = "public(:#{association})"
@@ -245,7 +241,7 @@ end
               #{finder_command}
               #{proxy_command}
             end
-            @proxy
+            #{proxy}
           end
           #{visibility_command}
         EOS_HAS_MANY_READ

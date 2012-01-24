@@ -33,7 +33,6 @@ class AttributeTest < ActiveModel::Base
     true
   end
 
-
 end
 
 class AttributeAllowNilTest < ActiveModel::Base
