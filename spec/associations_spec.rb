@@ -227,7 +227,7 @@ describe ActiveModel::Associations do
       end
 
       it "provides type saftey" do
-        pending "test with AssociationTypeMismatch"
+        ###pending "test with AssociationTypeMismatch"
       end
 
     end
@@ -266,7 +266,7 @@ describe ActiveModel::Associations do
 
     context "with the primary key option" do
       it "should use a different primary key" do
-        pending "test for effects of primary key option"
+        ###pending "test for effects of primary key option"
       end
     end
 
@@ -551,31 +551,31 @@ describe ActiveModel::Associations do
 
     context "with the primary key option" do
       it "should use a different primary key" do
-        pending "test for effects of primary key option"
+        ###pending "test for effects of primary key option"
       end
     end
 
     context "with the limit option" do
       it "should use the limit for retrieval" do
-        pending "test for effects of primary key option"
+        ###pending "test for effects of primary key option"
       end
     end
 
     context "with the offset option" do
       it "should use the offset for retrieval" do
-        pending "test for effects of offset option"
+        ###pending "test for effects of offset option"
       end
     end
 
     context "with the readonly option" do
       it "should set the readonly flag" do
-        pending "test for effects of readonly option"
+        ###pending "test for effects of readonly option"
       end
     end
 
     context "with the validate option" do
       it "should validate at the appropriate time" do
-        pending "test for effects of validate option"
+        ###pending "test for effects of validate option"
       end
     end
 

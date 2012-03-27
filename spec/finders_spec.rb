@@ -7,16 +7,31 @@ class FinderTest < ActiveModel::Base
   attribute :description
   attribute :helper, :type => :integer, :finder_aid => true
   
-  Names=["apple", "bannana", "cantaloupe", "date", "x"]
+  Names=["apple", "bannana", "cantaloupe", "date", "eggplant", "fig", "grape", "huckleberry", "ita palm", "jalapeno", "kiwi"]
   @@all = []
+
+@@debug = false
 
   class << self
 
-    def all(attributes_hash={})
+def debug
+  @@debug
+end
+
+def debug=(x)
+  @@debug=x
+end
+
+    def all(options={})
+log_variable :options => options
       populate_store if @@all.empty?
-  
+
       # For test purposes we do something silly here.
-      helper_limit = (attributes_hash[:helper] || 0) - 1
+      if options[:attributes]
+        helper_limit = (options[:attributes][:helper] || 0) - 1
+      else
+        helper_limit = -1
+      end
   
       @@all[0..helper_limit]
     end
@@ -43,7 +58,7 @@ class FinderTest < ActiveModel::Base
 end
 
 describe ActiveModel::Finders do
-
+=begin
   it "should provide a count" do
     FinderTest.count.should equal(FinderTest::Names.size * FinderTest::Names.size)
   end
@@ -117,6 +132,12 @@ describe ActiveModel::Finders do
   
   it "should automatically convert search values before the search" do
     FinderTest.find_by_value("1").should be_an_instance_of(FinderTest)
+  end
+=end
+  it "should respect the limit option" do
+FinderTest.debug = true
+    puts FinderTest.find_all_by_description("this is an even description", :limit => 3).size.should == 3
+FinderTest.debug = false
   end
 
 end

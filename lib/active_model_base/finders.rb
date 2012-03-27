@@ -87,10 +87,8 @@ module ActiveModel
         case method(:all).arity
           when 0
             all
-          when 1, -1
-            all(attributes_hash)
           else
-            all(attributes_hash, finder)
+            all :attributes => attributes_hash, :finder => finder
         end
       end
 
