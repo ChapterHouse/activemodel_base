@@ -8,7 +8,7 @@ module ActiveModel
     # TODO: Add delayed retrieval.
     class AssociationProxy < ActiveSupport::BasicObject
 
-      require "active_model_base/finders"
+      require "activemodel_base/finders"
       include ::ActiveModel::Finders::ClassMethods
 
       # The options are the exact same that were used to establish the association. 
@@ -24,22 +24,12 @@ module ActiveModel
       end
     
       def method_missing(method, *args, &block)
-#log("method_missing(#{method.inspect}, #{args.inspect}, #{block.inspect})") {
         begin
           super
         rescue ::NameError, ::NoMethodError => e
           @children.send(method, *args, &block)
         end
-#}
       end
-      
-def puts(*args)
-  ::Object.send(:puts, *args)
-end
-
-def log(*args, &block)
-  ::Object.log(*args, &block)
-end
 
       def build(*args)
         child = @child_klass.new(*args)
@@ -120,11 +110,7 @@ private
 
     module ClassMethods
 
-def print_commands(*commands)
-  commands.each { |x| puts x }
-end
-
-      # Does not yet address build_association or create_association. (Soon though. has_any now has them. Just have to finish the tests for has_many.)
+      # Does not yet address build_association or create_association. (Soon though. has_many now has them. Just have to finish the tests for has_many.)
       def belongs_to(association, options={})
         options[:class_name] ||= association.to_s.classify
         options[:foreign_key] ||= association.to_s + "_id"
@@ -184,7 +170,7 @@ end
         options[:class_name] ||= association.to_s.classify
         options[:foreign_key] ||= self.name.underscore + "_id"
         options[:primary_key] ||= "id"
-        options[:limit] = nil unless options.has_key?(:limit)
+        options[:limit] = options.fetch(:limit, nil)
         options[:offset] ||= 0
         options[:readonly] = false unless options.has_key?(:readonly)
         options[:validate] = false unless options.has_key?(:validate)

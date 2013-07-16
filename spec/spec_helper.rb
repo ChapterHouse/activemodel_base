@@ -2,7 +2,7 @@ require 'nested_logger'
 require 'rubygems'
 require 'bundler/setup'
 require 'rspec'
-require 'active_model_base'
+require 'activemodel_base'
 
 module CustomMatchers
   def be_kind_of(klass)

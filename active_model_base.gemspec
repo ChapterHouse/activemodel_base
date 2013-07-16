@@ -1,26 +1,30 @@
-# -*- encoding: utf-8 -*-
-$:.push File.expand_path("../lib", __FILE__)
-require "active_model_base/version"
+# coding: utf-8
+lib = File.expand_path('../lib', __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+require 'activemodel_base/version'
 
-Gem::Specification.new do |s|
-  s.name        = "ActiveModelBase"
-  s.version     = ActiveModel::Base::VERSION
-  s.platform    = Gem::Platform::RUBY
-  s.authors     = ["Frank Hall"]
-  s.email       = ["ChapterHouse.Dune@gmail.com"]
-  s.homepage    = ""
-  s.summary     = %q{A base class for active model that is analogous to ActiveRecord::Base}
-  s.description = %q{A base class for active model that is analogous to ActiveRecord::Base. It provides attributes, finders, serializers, and associations}
+Gem::Specification.new do |spec|
+  spec.name          = 'activemodel_base'
+  spec.version       = ActiveModel::Base::VERSION
+  spec.authors       = ['Frank Hall']
+  spec.email         = ['ChapterHouse.Dune@gmail.com']
+  spec.description   = %q{A base class for active model that is analogous to ActiveRecord::Base}
+  spec.summary       = %q{A base class for active model that is analogous to ActiveRecord::Base. It provides attributes, finders, serializers, and associations}
+  spec.homepage      = 'https://github.com/ChapterHouse/activemodel_base.git'
+  spec.license       = 'MIT'
 
-  s.rubyforge_project = "ActiveModelBase"
+  spec.files         = `git ls-files`.split($/)
+  spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
+  spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
+  spec.require_paths = ['lib']
 
-  s.files         = `git ls-files`.split("\n")
-  s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
-  s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
-  s.require_paths = ["lib"]
+  spec.add_development_dependency 'bundler', '~> 1.3'
+  spec.add_development_dependency 'rake'
+  spec.add_development_dependency 'rspec', '~> 2.13'
+  spec.add_development_dependency 'rdoc'
 
-  s.add_dependency 'activesupport', '~> 3.0.0'
-  s.add_dependency 'activemodel', '~> 3.0.0'
-  s.add_dependency 'uuid'
-  s.add_development_dependency 'rspec'
+  spec.add_dependency 'activesupport', '~> 3.0.0'
+  spec.add_dependency 'activemodel', '~> 3.0.0'
+  spec.add_dependency 'uuid'
+
 end

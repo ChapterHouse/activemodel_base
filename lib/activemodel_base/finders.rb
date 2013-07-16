@@ -16,7 +16,9 @@ module ActiveModel
           else
             attribute_hash = [finder_match.attribute_names, args[0..finder_match.attribute_names.size - 1]].transpose.inject(HashWithIndifferentAccess.new) { |hash, av|hash[av.first.to_sym] = av.last; hash }
             if [:all, :first, :last].include?(finder_match.finder)
-              find_matches attribute_hash, finder_match.finder
+              find_modifiers = HashWithIndifferentAccess.new({:finder => finder_match.finder})
+              find_modifiers.merge!(args.last) if args.last.is_a?(Hash)
+              find_matches attribute_hash, find_modifiers
             else
               raise "Unknown finder #{finder_match.finder}"
             end
@@ -79,16 +81,15 @@ module ActiveModel
         ids.inject([]) { |x, id| x << all.find { |y| y.id == id }}
       end
 
-      private
 
       # This method allows for you to accept the attributes hash in all to do some early optimization.
       # It also allows all to retrieve based off of the attributes if your source cannot retrieve all records without some type of limiting parameters.
-      def retrieve_all(attributes_hash, finder)
+      def retrieve_all(attributes_hash, retrieve_modifiers)
         case method(:all).arity
           when 0
             all
           else
-            all :attributes => attributes_hash, :finder => finder
+            all :attributes => attributes_hash, :modifiers => retrieve_modifiers
         end
       end
 
@@ -104,7 +105,7 @@ module ActiveModel
         end
       end
 
-      def find_matches(attribute_hash, finder)
+      def find_matches(attribute_hash, find_modifiers)
         # Convert values given to the types specified in the model
         attribute_hash = duck_type_hash_values(attribute_hash)
         # Locate all attributes which are only aids to be passed as hints to the low level retrieve_all
@@ -113,17 +114,21 @@ module ActiveModel
         keys = attribute_hash.keys - finder_aids.map(&:to_s)
 
         # Make the request to the low level retriever.
-        all_values = retrieve_all(attribute_hash, finder)
+        all_values = retrieve_all(attribute_hash, find_modifiers)
         # Reverse the values if we are looking for the last match
-        all_values.reverse! if finder == :last
+        all_values.reverse! if find_modifiers[:finder] == :last
         # Identify the ruby search command we will use to dig through the values
-        search_command = (finder == :all) ? :select : :find
+        search_command = (find_modifiers[:finder] == :all) ? :select : :find
+
+        # Extract the limit.
+        limit = find_modifiers[:limit]
 
         # Pull out the final value(s) matching our search
         all_values.send(search_command) do |x|
-          keys.inject(true) do |rc, key|
-            rc && attribute_hash[key] == x.attributes[key]
-          end
+          # Lower the limit remaining if one was given
+          limit -= 1 if limit
+          # If a limit was not given or it is still zero or above, and all the attributes we are interested in match, then select it.
+          (!limit || limit >= 0) && keys.inject(true) { |rc, key| rc && attribute_hash[key] == x.attributes[key] }
         end
       end
 
@@ -131,3 +136,4 @@ module ActiveModel
 
   end
 end
+

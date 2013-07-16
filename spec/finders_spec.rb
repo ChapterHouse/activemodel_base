@@ -14,16 +14,7 @@ class FinderTest < ActiveModel::Base
 
   class << self
 
-def debug
-  @@debug
-end
-
-def debug=(x)
-  @@debug=x
-end
-
     def all(options={})
-log_variable :options => options
       populate_store if @@all.empty?
 
       # For test purposes we do something silly here.
@@ -58,7 +49,7 @@ log_variable :options => options
 end
 
 describe ActiveModel::Finders do
-=begin
+
   it "should provide a count" do
     FinderTest.count.should equal(FinderTest::Names.size * FinderTest::Names.size)
   end
@@ -99,7 +90,7 @@ describe ActiveModel::Finders do
   end
   
   it "should NOT throw an exception if using find_by_id and the record is not found" do
-    expect{ FinderTest.find_by_id("rasberry_12") }.to_not raise_error(ActiveModel::RecordNotFound)
+    expect{ FinderTest.find_by_id("rasberry_12") }.to_not raise_error
   end
   
   it "should find one by a single attribute" do
@@ -133,11 +124,9 @@ describe ActiveModel::Finders do
   it "should automatically convert search values before the search" do
     FinderTest.find_by_value("1").should be_an_instance_of(FinderTest)
   end
-=end
+
   it "should respect the limit option" do
-FinderTest.debug = true
-    puts FinderTest.find_all_by_description("this is an even description", :limit => 3).size.should == 3
-FinderTest.debug = false
+    FinderTest.find_all_by_description("this is an even description", :limit => 3).size.should eql(3)
   end
 
 end

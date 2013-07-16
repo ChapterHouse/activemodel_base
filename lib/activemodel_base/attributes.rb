@@ -42,7 +42,7 @@ module ActiveModel
 
     def initialize(new_attributes={})
       new_attributes.each { |name, value| send("#{name}=",value) }
-      super
+      super()
     end
 
     # If you need to compare against something more than just the attributes then override this.
